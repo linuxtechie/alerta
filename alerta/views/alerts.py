@@ -219,6 +219,34 @@ def untag_alert(alert_id):
     else:
         raise ApiError('failed to untag alert', 500)
 
+        
+# update ticket
+@api.route('/alert/<alert_id>/ticket', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@timer(attrs_timer)
+@jsonp
+def update_ticket(alert_id):
+    ticket = request.json.get('ticket', None)
+
+    if not ticket:
+        raise ApiError("must supply 'ticket' as json data", 400)
+
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    write_audit_trail.send(current_app._get_current_object(), event='alert-ticket-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+
+    if alert.update_ticket(ticket):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update ticket', 500)
+
+
 
 # update attributes
 @api.route('/alert/<alert_id>/attributes', methods=['OPTIONS', 'PUT'])

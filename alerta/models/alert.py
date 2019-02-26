@@ -64,6 +64,8 @@ class Alert:
         self.last_receive_id = kwargs.get('last_receive_id', None)
         self.last_receive_time = kwargs.get('last_receive_time', None)
         self.history = kwargs.get('history', None) or list()
+        self.ticketId = kwargs.get('ticketId', None)
+        self.ticketStatus = kwargs.get('ticketStatus', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'Alert':
@@ -99,7 +101,9 @@ class Alert:
             create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
-            customer=json.get('customer', None)
+            customer=json.get('customer', None),
+            ticketId=json.get('ticketId', None),
+            ticketStatus=json.get('ticketStatus', None)
         )
 
     @property
@@ -132,7 +136,9 @@ class Alert:
             'receiveTime': self.receive_time,
             'lastReceiveId': self.last_receive_id,
             'lastReceiveTime': self.last_receive_time,
-            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
+            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
+            'ticketId': self.ticketId,
+            'ticketStatus': self.ticketStatus
         }
 
     def get_id(self, short: bool=False) -> str:
@@ -180,7 +186,9 @@ class Alert:
             receive_time=doc.get('receiveTime', None),
             last_receive_id=doc.get('lastReceiveId', None),
             last_receive_time=doc.get('lastReceiveTime', None),
-            history=[History.from_db(h) for h in doc.get('history', list())]
+            history=[History.from_db(h) for h in doc.get('history', list())],
+            ticketId=doc.get('ticketId', None),
+            ticketStatus=doc.get('ticketStatus', None)
         )
 
     @classmethod
@@ -212,7 +220,9 @@ class Alert:
             receive_time=rec.receive_time,
             last_receive_id=rec.last_receive_id,
             last_receive_time=rec.last_receive_time,
-            history=[History.from_db(h) for h in rec.history]
+            history=[History.from_db(h) for h in rec.history],
+            ticketId=rec.ticketId,
+            ticketStatus=rec.ticketStatus
         )
 
     @classmethod
@@ -400,6 +410,10 @@ class Alert:
     # untag an alert
     def untag(self, tags: List[str]) -> bool:
         return db.untag_alert(self.id, tags)
+        
+    # update alert ticket
+    def update_ticket(self, ticket: Dict[str, Any]) -> bool:
+        return db.update_ticket(self.id, ticket)
 
     # update alert attributes
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:

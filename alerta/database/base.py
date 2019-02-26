@@ -128,6 +128,9 @@ class Database(Base):
     def untag_alert(self, id, tags):
         raise NotImplementedError
 
+    def update_ticket(self, id, ticket):
+        raise NotImplementedError
+
     def update_attributes(self, id, old_attrs, new_attrs):
         raise NotImplementedError
 

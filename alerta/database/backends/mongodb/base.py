@@ -376,6 +376,15 @@ class Backend(Database):
         response = self.get_db().alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {'tags': tags}})
         return response.matched_count > 0
 
+    def update_ticket(self, id, ticket):
+        """
+        Update ticket
+        """
+        update = dict()
+        update['$set'] = {k: v for k, v in ticket.items() if v is not None}
+        response = self.get_db().alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        return response.matched_count > 0
+        
     def update_attributes(self, id, old_attrs, new_attrs):
         """
         Set all attributes and unset attributes by using a value of 'null'.
