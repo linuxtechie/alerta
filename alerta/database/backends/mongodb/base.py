@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 
 from flask import current_app
-from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
+from pymongo import ASCENDING, DESCENDING, TEXT, MongoClient, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
@@ -34,7 +34,7 @@ class Backend(Database):
     @staticmethod
     def _create_indexes(db):
         db.alerts.create_index(
-            [('environment', ASCENDING), ('customer', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)],
+            [('environment', ASCENDING), ('customer', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING), ('ticketId', DESCENDING)],
             unique=True
         )
         db.alerts.create_index([('$**', TEXT)])
@@ -114,6 +114,7 @@ class Backend(Database):
 
     def is_duplicate(self, alert):
         query = {
+            'ticketStatus': { "$ne": "Closed" },
             'environment': alert.environment,
             'resource': alert.resource,
             'event': alert.event,
@@ -124,6 +125,7 @@ class Backend(Database):
 
     def is_correlated(self, alert):
         query = {
+            'ticketStatus': { "$ne": "Closed" },
             'environment': alert.environment,
             'resource': alert.resource,
             '$or': [
@@ -216,6 +218,7 @@ class Backend(Database):
         receive id and time, appending all to history. Append to history again if status changes.
         """
         query = {
+            'ticketStatus': { "$ne": "Closed" },
             'environment': alert.environment,
             'resource': alert.resource,
             '$or': [
@@ -295,7 +298,9 @@ class Backend(Database):
             'receiveTime': alert.receive_time,
             'lastReceiveId': alert.last_receive_id,
             'lastReceiveTime': alert.last_receive_time,
-            'history': [h.serialize for h in alert.history]
+            'history': [h.serialize for h in alert.history],
+            'ticketId': alert.ticketId,
+            'ticketStatus': alert.ticketStatus
         }
         if self.get_db().alerts.insert_one(data).inserted_id == alert.id:
             return data
